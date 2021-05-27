@@ -1,0 +1,114 @@
+#include <SoftwareSerial.h>
+ 
+SoftwareSerial android(8, 7);//(rx,tx)
+
+//variable for motors
+int motorR_pin1 = 5;
+int motorR_pin2 = 4;
+int motorL_pin1 = 3;
+int motorL_pin2 = 2;
+// ULTRASONIC SENSOR VARIABLES
+int echo = 10;
+int trig = 9;
+long duration ;
+int distance;
+char command ;
+String voice;
+
+void setup()  { 
+  
+  // use the baud rate your bluetooth module is configured to 
+  Serial.begin(9600);
+  android.begin(9600);
+  
+  pinMode(motorR_pin1,OUTPUT);
+  pinMode(motorR_pin2,OUTPUT);
+  pinMode(motorL_pin1,OUTPUT);
+  pinMode(motorL_pin2,OUTPUT);
+  
+  // Ultrasonic sensor pins Declaration
+    pinMode(trig, OUTPUT);
+    pinMode(echo, INPUT);
+} 
+
+void loop()  { 
+
+    //start pulsing
+    digitalWrite(trig, HIGH);
+    delay(2); 
+    digitalWrite(trig, LOW);
+    duration = pulseIn(echo, HIGH);
+    distance = duration * .034 / 2;
+    Serial.print("distance: ");
+    Serial.print(distance);
+    Serial.println(" CM"); 
+    while(android.available())
+    {
+      delay(10);
+      command = android.read();
+      voice+=char(command);
+      android.println(command);
+      Serial.println(command);
+    }
+    if (voice.length() > 0)
+    {
+      Serial.println(voice);
+      
+    if(distance >= 15)
+   {
+      //stop wheels if detects object infront of it
+      digitalWrite(motorR_pin1,LOW);
+      digitalWrite(motorR_pin2,LOW);
+      digitalWrite(motorL_pin1,LOW);
+      digitalWrite(motorL_pin2,LOW);
+       
+      //goes forward with medium speed
+   if(voice == "forward")
+   {
+      analogWrite(motorR_pin1,100);//pwm
+      digitalWrite(motorR_pin2,LOW);
+      analogWrite(motorL_pin1,100);//pwm
+      digitalWrite(motorL_pin2,LOW);
+      delay(100);
+   }
+   //goes back with high speed
+  else  if(voice == "back" || voice == "bad")
+   {
+      analogWrite(motorR_pin1,155);//pwm
+      digitalWrite(motorR_pin2,HIGH);
+      analogWrite(motorL_pin1,155);//pwm
+      digitalWrite(motorL_pin2,HIGH);
+      delay(100);
+   }
+   //turns right
+   else if(voice == "right" || voice == "like" || voice == "lite" )
+   {
+
+      analogWrite(motorR_pin1,130);//pwm
+      digitalWrite(motorR_pin2,LOW);
+      analogWrite(motorL_pin1,60);//pwm
+      digitalWrite(motorL_pin2,LOW);
+    delay(100);
+   }
+   //turns left
+   else if(voice == "left")
+   {
+      analogWrite(motorR_pin1,60);//pwm
+      digitalWrite(motorR_pin2,LOW);
+      analogWrite(motorL_pin1,130);//pwm
+      digitalWrite(motorL_pin2,LOW);
+    delay(100);
+   }
+   }
+   //stops
+   else if(voice == "stop")
+   {
+    digitalWrite(5, LOW);
+    digitalWrite(4, LOW);
+    digitalWrite(3, LOW);
+    digitalWrite(2, LOW);
+    delay(100);
+   }
+   voice=""; //reset
+}
+}
